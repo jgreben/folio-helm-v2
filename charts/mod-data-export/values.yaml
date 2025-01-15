@@ -217,3 +217,64 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# Folio specific
+javaOptions: -XX:MaxRAMPercentage=85.0 -XX:+UseG1GC -Daws.region=$(AWS_REGION) -Daws.accessKeyId=$(AWS_ACCESS_KEY_ID) -Daws.secretKey=$(AWS_SECRET_ACCESS_KEY) -Dbucket.name=$(AWS_BUCKET)
+dbMaxPoolSize: 5
+
+# If need to create and attach ConfigMap add nedded parameters here
+# And create folder configmaps. In folder create file with the same name that in this config.
+# In file paste only data for configmap.
+# config:
+#   - name: sftp-config
+#     subPath: users.conf
+#     mountPath: /etc/sftp/users.conf
+
+# volumeMounts:
+#   secrets:
+#     - name: secure-store-props
+#       mountPath: /etc/edge
+#       secretName: ephemeral-properties
+#   emptyDirs:
+#     - name: dumps-volume
+#       mountPath: /dumps
+
+extraEnv: |
+  - name: DB_MAXPOOLSIZE
+    value: "{{ .Values.dbMaxPoolSize }}"
+  - name: JAVA_OPTIONS
+    value: {{ .Values.javaOptions }}
+
+# Enable parameters for DB, Kafka or AWS connection. In value set name of secret
+dbConnectParameters: db-connect-modules 
+# kafkaConnectParameters: db-connect-modules
+awsConnectParameters: s3-credentials
+
+# initContainer:
+#   image: 
+#     repository: busybox
+#     tag: latest
+#   imagePullPolicy: Always
+#   command: cat
+#   overrideArgs:
+#     - diku
+#     - dkl
+#   mountPath: /path
+
+postJob:
+  enabled: false
+  okapiUrl: http://okapi:9130
+  tenantId: diku
+  sampleData: false
+  referenceData: false
+  image:
+    repository: docker.dev.folio.org/folio-okapi-registration
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "latest"
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+
+healthCheck: false
